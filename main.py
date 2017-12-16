@@ -9,10 +9,9 @@ separator = '=' * 100 + '\n'
 
 token = authenticate.get_user_creds()
 client = dropbox.Dropbox(token)
-print(client.users_get_current_account())
 
-# for entry in client.files_list_folder('').entries:
-#     print(entry.name)
+# print(client.users_get_current_account())
+# print('=' * 100 + '\n')
 
 
 def do_process(delta_response):
@@ -39,16 +38,14 @@ def get_all_files():
         yield delta_response
 
 
-print(separator)
 sources = []
 for response in get_all_files():
     for entry in response.entries:
-        # print(entry.path_display)
         if isinstance(entry, dropbox.files.FileMetadata):
             sources.append(entry.path_display)
 
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 def prepare_source(source):
     elements = source.split('/')
@@ -64,11 +61,9 @@ def add_key(elements, file_name):
     return result
 
 
-# base merge function get from here:
-# http://stackoverflow.com/questions/7204805/dictionaries-of-dictionaries-merge
 def merge(a, b, path=None):
-    "merges b into a"
-    if path is None: path = []
+    if path is None:
+        path = []
     for key in b:
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
@@ -76,17 +71,21 @@ def merge(a, b, path=None):
             elif isinstance(a[key], int) and isinstance(b[key], int):
                 a[key] += b[key]
             else:
-                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+                print('a>{}<     b>{}<    path>{}<     key>{}<'.format(a, b, path, key))
+                raise Exception('Conflict at {}'.format('.'.join(path + [str(key)])))
         else:
             a[key] = b[key]
     return a
 
 
 result = dict()
-
 for source in sources:
-    # print('source:', source)
-    # print(prepare_source(source))
     result = merge(result, add_key(*prepare_source(source)))
 
-print(json.dumps(result, indent=4, sort_keys=True))
+# print(json.dumps(result, indent=4, sort_keys=True))
+
+
+import asciitree
+
+tr = asciitree.LeftAligned()
+print(tr(result['']))
