@@ -84,3 +84,56 @@ class TreeTests(TestCase):
         self.assertEqual(['b'], [_.value for _ in a.children])
         b = a.get_child('b')
         self.assertEqual(b.parent, a)
+
+    def test_adding_multiple_nodes_adds_to_children(self):
+        root = Tree()
+        root.insert_path('/a')
+        root.insert_path('/b')
+        self.assertEqual(['a', 'b'], [_.value for _ in root.children])
+        a = root.get_child('a')
+        self.assertEqual(a.parent, root)
+        b = root.get_child('b')
+        self.assertEqual(b.parent, root)
+
+    def test_adding_multiple_nodes_adds_to_children_for_nested_paths(self):
+        root = Tree()
+        root.insert_path('/child/a')
+        root.insert_path('/child/b')
+        self.assertEqual(['child'], [_.value for _ in root.children])
+        child = root.get_child('child')
+        self.assertEqual(child.parent, root)
+        a = child.get_child('a')
+        self.assertEqual(a.parent, child)
+        b = child.get_child('b')
+        self.assertEqual(b.parent, child)
+
+    def test_adding_a_node_more_than_once_only_creates_one_instance(self):
+        root = Tree()
+        root.insert_path('a')
+        root.insert_path('a')
+        print(root.children)
+        self.assertEqual(1, len(root.children))
+        self.assertEqual(['a'], [_.value for _ in root.children])
+
+    def test_find_node(self):
+        root = Tree()
+        child = Tree('a')
+        root.add_child(child)
+        node = root.find_path('/a')
+        self.assertEqual(node, child)
+
+    def test_find_node_returns_None_if_node_does_not_exist(self):
+        root = Tree()
+        child = Tree('a')
+        root.add_child(child)
+        node = root.find_path('/b')
+        self.assertIsNone(node)
+
+    def test_find_nested_node(self):
+        root = Tree()
+        a = Tree('a')
+        root.add_child(a)
+        b = Tree('b')
+        a.add_child(b)
+        node = root.find_path('/a/b')
+        self.assertEqual(node, b)

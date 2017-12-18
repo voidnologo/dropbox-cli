@@ -8,6 +8,9 @@ class PathTree:
     def __str__(self):
         return self.value
 
+    def __repr__(self):
+        return "PathTree('{}')".format(self.value)
+
     def __iter__(self):
         if self.children is None:
             raise StopIteration
@@ -28,18 +31,33 @@ class PathTree:
             return None
         return next((child for child in self.children if child.value == identifier), None)
 
-    def insert_path(self, node_path):
+    def _get_path_parts(self, node_path):
         parts = node_path.split('/')
-        parts = parts[1:] if node_path.startswith('/') else parts
+        return parts[1:] if node_path.startswith('/') else parts
+
+    def insert_path(self, node_path):
+        parts = self._get_path_parts(node_path)
         self._insert_node(parts)
 
     def _insert_node(self, path):
         val = path.pop(0)
         contains = self.get_child(val)
-        if contains and len(path) > 0:
-            contains._insert_node(path)
+        if contains:
+            if len(path) > 0:
+                contains._insert_node(path)
         else:
             child = PathTree(val)
             self.add_child(child)
             if len(path) > 0:
                 child._insert_node(path)
+
+    def find_path(self, node_path):
+        parts = self._get_path_parts(node_path)
+        return self._find_node(parts)
+
+    def _find_node(self, path):
+        val = path.pop(0)
+        contains = self.get_child(val)
+        if len(path) > 0:
+            return contains._find_node(path)
+        return contains
