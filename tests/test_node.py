@@ -137,3 +137,35 @@ class TreeTests(TestCase):
         a.add_child(b)
         node = root.find_path('/a/b')
         self.assertEqual(node, b)
+
+    def test_get_ancestors(self):
+        root = Tree()
+        a = Tree('a')
+        root.add_child(a)
+        ancestors = list(a.get_ancestors())
+        self.assertEqual(ancestors, [root])
+
+    def test_get_ancestors_on_nested_path(self):
+        root = Tree()
+        a = Tree('a')
+        root.add_child(a)
+        b = Tree('b')
+        a.add_child(b)
+        ancestors = list(b.get_ancestors())
+        self.assertEqual(ancestors, [a, root])
+
+    def test_get_path_string(self):
+        root = Tree()
+        a = Tree('a')
+        root.add_child(a)
+        path = a.get_path()
+        self.assertEqual(path, '/a')
+
+    def test_get_path_string_on_nested_path(self):
+        root = Tree()
+        a = Tree('a')
+        root.add_child(a)
+        b = Tree('b')
+        a.add_child(b)
+        path = b.get_path()
+        self.assertEqual(path, '/a/b')

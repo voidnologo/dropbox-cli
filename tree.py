@@ -1,3 +1,6 @@
+import itertools
+
+
 class PathTree:
 
     def __init__(self, val=None):
@@ -61,3 +64,11 @@ class PathTree:
         if len(path) > 0:
             return contains._find_node(path)
         return contains
+
+    def get_ancestors(self):
+        if self.parent is not None:
+            yield self.parent
+            yield from self.parent.get_ancestors()
+
+    def get_path(self):
+        return '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))[1:]
