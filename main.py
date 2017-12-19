@@ -1,91 +1,72 @@
-import dropbox
-import json
+import cmd
+# import textwrap
 
 import authenticate
+from dropbox_utils import DropboxUtils
+from tree import PathTree
 
 
-separator = '=' * 100 + '\n'
+class MainLoop(cmd.Cmd):
+    welcome = 'Dropbox-CLI'
+    doc_header = 'Commands'
+    undoc_header = 'No help available'
+    ruler = '-'
 
+    def preloop(self):
+        print(self.welcome)
+        self.initialize()
 
-token = authenticate.get_user_creds()
-client = dropbox.Dropbox(token)
+    def initialize(self):
+        token = authenticate.get_user_creds()
+        dbutil = DropboxUtils(token=token)
+        self.tree = dbutil.get_tree()
+        self.current_node = self.tree
 
-# print(client.users_get_current_account())
-# print('=' * 100 + '\n')
+    @property
+    def prompt(self):
+        return '[{}] --> '.format(self.current_node.get_path())
 
+    def do_print(self, args):
+        """
+        Pretty print tree.
+        Draw Types:
+            'ascii': plain ascii
+            'ascii-ex': line drawing
+            'ascii-exr': line drawing, rounded corners
+            'ascii-em': emphasis line drawing
+            'ascii-emv': vertical lines emphasized line drawing
+            'ascii-emh': horizontal lines emphasized line drawing
+        """
+        default_style = 'ascii-ex'
+        line_type = args if args in PathTree.DRAW_TYPE.keys() else default_style
+        self.current_node.formated_print(line_type=line_type)
 
-def do_process(delta_response):
-    return (delta_response is None) or delta_response.has_more
-
-
-def get_changes(cursor):
-    if cursor is None:
-        return client.files_list_folder('', recursive=True)
-    return client.files_list_folder_continue(cursor)
-
-
-def get_cursor(delta_response):
-    if delta_response:
-        return delta_response.cursor
-    return None
-
-
-def get_all_files():
-    delta_response = None
-    while do_process(delta_response):
-        cursor = get_cursor(delta_response)
-        delta_response = get_changes(cursor)
-        yield delta_response
-
-
-sources = []
-for response in get_all_files():
-    for entry in response.entries:
-        if isinstance(entry, dropbox.files.FileMetadata):
-            sources.append(entry.path_display)
-
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-def prepare_source(source):
-    elements = source.split('/')
-    return elements, elements.pop()
-
-
-def add_key(elements, file_name):
-    result = dict()
-    if len(elements) > 1:
-        result[elements[0]] = add_key(elements[1:], file_name)
-    else:
-        result[elements[0]] = {file_name: 'file'}
-    return result
-
-
-def merge(a, b, path=None):
-    if path is None:
-        path = []
-    for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                merge(a[key], b[key], path + [str(key)])
-            elif isinstance(a[key], int) and isinstance(b[key], int):
-                a[key] += b[key]
+    def do_ls(self, args):
+        dirs = []
+        leafs = []
+        for child in self.current_node.children:
+            if child.children:
+                dirs.append('{}/'.format(child.value))
             else:
-                print('a>{}<     b>{}<    path>{}<     key>{}<'.format(a, b, path, key))
-                raise Exception('Conflict at {}'.format('.'.join(path + [str(key)])))
+                leafs.append(child.value)
+        print(sorted(dirs))
+        print(sorted(leafs))
+
+    def do_cd(self, args):
+        next = args.strip()
+        if next == '..':
+            if self.current_node.parent:
+                new_node = self.current_node.parent
+                self.current_node = new_node
+            else:
+                return
         else:
-            a[key] = b[key]
-    return a
+            new_node = self.current_node.get_child(next)
+            if new_node and new_node.children:
+                self.current_node = new_node
+            else:
+                print('Invalid path')
 
 
-result = dict()
-for source in sources:
-    result = merge(result, add_key(*prepare_source(source)))
-
-# print(json.dumps(result, indent=4, sort_keys=True))
-
-
-import asciitree
-
-tr = asciitree.LeftAligned()
-print(tr(result['']))
+if __name__ == "__main__":
+    MainLoop().cmdloop()
