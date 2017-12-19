@@ -11,8 +11,9 @@ class PathTree:
 
     def __init__(self, val=None):
         self.value = val or '/'
-        self.children = None
+        self.children = []
         self.parent = None
+        self.meta = dict()
 
     def __str__(self):
         return self.value
@@ -36,7 +37,7 @@ class PathTree:
             self.children = [node]
 
     def get_child(self, identifier):
-        if self.children is None:
+        if not self.children:
             return None
         return next((child for child in self.children if child.value == identifier), None)
 
@@ -81,7 +82,7 @@ class PathTree:
 
     def display(self, level=0):
         out = '    ' * level + self.value + '\n'
-        if self.children is not None:
+        if self.children:
             for child in self.children:
                 out += child.display(level + 1)
         return out
@@ -105,7 +106,7 @@ class PathTree:
             yield leading + node_marker, node
 
         level += 1
-        if node.children is not None:
+        if node.children:
             idxlast = len(node.children)-1
             for idx, child in enumerate(node.children):
                 is_last.append(idx == idxlast)

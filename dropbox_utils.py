@@ -50,8 +50,20 @@ class DropboxUtils:
         tree = PathTree()
         for response in self.contents:
             for entry in response.entries:
+                tree.insert_path(entry.path_display)
+                node = tree.find_path(entry.path_display)
                 if isinstance(entry, dropbox.files.FileMetadata):
-                    tree.insert_path(entry.path_display)
+                    node.meta = {
+                        'type': 'file',
+                        'id': entry.id,
+                        'modified': entry.server_modified,
+                        'size': entry.size
+                    }
+                if isinstance(entry, dropbox.files.FolderMetadata):
+                    node.meta = {
+                        'type': 'folder',
+                        'id': entry.id
+                    }
         return tree
 
     @cached_property

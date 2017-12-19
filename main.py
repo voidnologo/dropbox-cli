@@ -45,12 +45,12 @@ class MainLoop(cmd.Cmd):
         dirs = []
         leafs = []
         for child in self.current_node.children:
-            if child.children:
+            if child.meta.get('type') == 'folder':
                 dirs.append('{}/'.format(child.value))
             else:
                 leafs.append(child.value)
-        print(sorted(dirs))
-        print(sorted(leafs))
+        print('   DIRS :', sorted(dirs))
+        print('   FILES:', sorted(leafs))
 
     def do_cd(self, args):
         next = args.strip()
@@ -62,7 +62,7 @@ class MainLoop(cmd.Cmd):
                 return
         else:
             new_node = self.current_node.get_child(next)
-            if new_node and new_node.children:
+            if new_node and new_node.meta.get('type') == 'folder':
                 self.current_node = new_node
             else:
                 print('Invalid path')
