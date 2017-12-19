@@ -1,6 +1,3 @@
-import itertools
-
-
 class PathTree:
 
     def __init__(self, val=None):
@@ -17,7 +14,7 @@ class PathTree:
     def __iter__(self):
         if self.children is None:
             raise StopIteration
-        yield from self.children
+        yield from self.children  # flake8: noqa
 
     def __eq__(self, comp):
         return self.value == comp
@@ -72,3 +69,43 @@ class PathTree:
 
     def get_path(self):
         return '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))[1:]
+
+    def display(self, level=0):
+        out = '    ' * level + self.value + '\n'
+        if self.children is not None:
+            for child in self.children:
+                out += child.display(level + 1)
+        return out
+
+# ====================================================================================================
+
+    def formated_print(self, node=None, line_type='ascii-ex', func=print):
+        draw_type = {
+            'ascii': ('|', '|- ', '.- '),
+            'ascii-ex': ('\u2502', '\u251c\u2500 ', '\u2514\u2500 '),
+            'ascii-exr': ('\u2502', '\u251c\u2500 ', '\u2570\u2500 '),
+            'ascii-em': ('\u2551', '\u2560\u2550 ', '\u255a\u2550 '),
+            'ascii-emv': ('\u2551', '\u255f\u2500 ', '\u2559\u2500 '),
+            'ascii-emh': ('\u2502', '\u255e\u2550 ', '\u2558\u2550 '),
+        }[line_type]
+        node = self if node is None else node
+        for pre, node in self.__draw_tree(node, draw_type, []):
+            func('{0}{1}'.format(pre, node.value))
+
+    def __draw_tree(self, node, draw_type, is_last):
+        dt_vline, dt_line_box, dt_line_corner = draw_type
+
+        if node.parent is None:
+            yield '', node
+        else:
+            leading = ''.join([dt_vline + ' ' * 2 if not x else ' ' * 3 for x in is_last[0:-1]])
+            node_marker = dt_line_corner if is_last[-1] else dt_line_box
+            yield leading + node_marker, node
+
+        if node.children is not None:
+            idxlast = len(node.children)-1
+            for idx, child in enumerate(node.children):
+                is_last.append(idx == idxlast)
+                for item in self.__draw_tree(child, draw_type, is_last):
+                    yield item
+                is_last.pop()
