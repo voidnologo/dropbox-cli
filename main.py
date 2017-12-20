@@ -78,6 +78,12 @@ class MainLoop(cmd.Cmd):
             else:
                 print('Invalid path')
 
+    def do_quit(self, args):
+        return True
+
+    def do_exit(self, args):
+        return True
+
 
 if __name__ == "__main__":
     MainLoop().cmdloop()
