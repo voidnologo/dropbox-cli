@@ -27,7 +27,7 @@ class MainLoop(cmd.Cmd):
     def prompt(self):
         return '[{}] --> '.format(self.current_node.get_path())
 
-    def do_print(self, args):
+    def do_tree(self, args):
         """
         Pretty print tree.
         Draw Types:
@@ -51,16 +51,17 @@ class MainLoop(cmd.Cmd):
             else:
                 leafs.append(child.value)
         words = sorted(dirs + leafs)
-        width = shutil.get_terminal_size().columns
-        biggest = max(len(_) for _ in words)
-        size = biggest + 3
-        cols = width // size
-        outs = '{{:<{size}}}'.format(size=size)
-        padding = ''
-        w = chain(iter(words), repeat(padding))
-        x = iter(lambda: tuple(islice(w, cols)), (padding,) * cols)
-        for row in list(x):
-            print((outs * cols).format(*row))
+        if words:
+            width = shutil.get_terminal_size().columns
+            biggest = max(len(_) for _ in words)
+            size = biggest + 3
+            cols = width // size
+            outs = '{{:<{size}}}'.format(size=size)
+            padding = ''
+            w = chain(iter(words), repeat(padding))
+            x = iter(lambda: tuple(islice(w, cols)), (padding,) * cols)
+            for row in list(x):
+                print((outs * cols).format(*row))
 
     def do_cd(self, args):
         next = args.strip()
