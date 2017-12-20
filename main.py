@@ -1,5 +1,6 @@
 import cmd
-# import textwrap
+from itertools import islice, chain, repeat
+import shutil
 
 import authenticate
 from dropbox_utils import DropboxUtils
@@ -49,8 +50,17 @@ class MainLoop(cmd.Cmd):
                 dirs.append('{}/'.format(child.value))
             else:
                 leafs.append(child.value)
-        print('   DIRS :', sorted(dirs))
-        print('   FILES:', sorted(leafs))
+        words = sorted(dirs + leafs)
+        width = shutil.get_terminal_size().columns
+        biggest = max(len(_) for _ in words)
+        size = biggest + 3
+        cols = width // size
+        outs = '{{:<{size}}}'.format(size=size)
+        padding = ''
+        w = chain(iter(words), repeat(padding))
+        x = iter(lambda: tuple(islice(w, cols)), (padding,) * cols)
+        for row in list(x):
+            print((outs * cols).format(*row))
 
     def do_cd(self, args):
         next = args.strip()
