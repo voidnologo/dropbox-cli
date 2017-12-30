@@ -8,7 +8,7 @@ class TreeTests(TestCase):
     def test_node_has_with_no_children_has_None(self):
         node = Tree('a')
         self.assertEqual(node.value, 'a')
-        self.assertIsNone(node.children)
+        self.assertEqual(node.children, [])
 
     def test_add_child(self):
         root = Tree('root')
@@ -80,7 +80,6 @@ class TreeTests(TestCase):
         self.assertEqual(['a'], [_.value for _ in root.children])
         a = root.get_child('a')
         self.assertEqual(a.parent, root)
-        print(a.children)
         self.assertEqual(['b'], [_.value for _ in a.children])
         b = a.get_child('b')
         self.assertEqual(b.parent, a)
@@ -111,7 +110,6 @@ class TreeTests(TestCase):
         root = Tree()
         root.insert_path('a')
         root.insert_path('a')
-        print(root.children)
         self.assertEqual(1, len(root.children))
         self.assertEqual(['a'], [_.value for _ in root.children])
 
