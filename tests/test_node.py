@@ -169,3 +169,13 @@ class TreeTests(TestCase):
         a.add_child(b)
         path = b.get_path()
         self.assertEqual(path, '/a/b')
+
+    def test_root_node_has_path_of_forward_slash(self):
+        root = Tree()
+        path = root.get_path()
+        self.assertEqual(path, '/')
+
+    def test_root_node_has_path_of_forward_slash_plus_value(self):
+        root = Tree('root')
+        path = root.get_path()
+        self.assertEqual(path, '/root')

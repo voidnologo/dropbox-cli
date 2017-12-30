@@ -1,8 +1,9 @@
 import cmd
-from itertools import islice, chain, repeat
+from itertools import zip_longest
 import shutil
 
 import authenticate
+from exceptions import InvalidPath
 from dropbox_utils import DropboxUtils
 from tree import PathTree
 
@@ -43,40 +44,50 @@ class MainLoop(cmd.Cmd):
         self.current_node.formated_print(line_type=line_type)
 
     def do_ls(self, args):
-        dirs = []
-        leafs = []
+        for line in self._ls():
+            print(line)
+
+    def _ls(self):
+        items = []
         for child in self.current_node.children:
-            if child.meta.get('type') == 'folder':
-                dirs.append('{}/'.format(child.value))
-            else:
-                leafs.append(child.value)
-        words = sorted(dirs + leafs)
-        if words:
-            width = shutil.get_terminal_size().columns
-            biggest = max(len(_) for _ in words)
-            size = biggest + 3
-            cols = width // size
-            outs = '{{:<{size}}}'.format(size=size)
-            padding = ''
-            w = chain(iter(words), repeat(padding))
-            x = iter(lambda: tuple(islice(w, cols)), (padding,) * cols)
-            for row in list(x):
-                print((outs * cols).format(*row))
+            ind = '/' if child.meta.get('type') == 'folder' else ''
+            items.append('{}{}'.format(child.value, ind))
+        items.sort()
+        if items:
+            size = max(len(_) for _ in items) + 3
+            cols = shutil.get_terminal_size().columns // size
+            entry = '{{:<{size}}}'.format(size=size)
+            for row in zip_longest(*[iter(items)] * cols, fillvalue=''):
+                yield (entry * cols).format(*row)
 
     def do_cd(self, args):
-        next = args.strip()
-        if next == '..':
+        try:
+            self._cd(args)
+        except InvalidPath as e:
+            print('Invalid Path: {}'.format(e))
+
+    def _cd(self, args):
+        next_node = args.strip()
+        if next_node == '..':
             if self.current_node.parent:
-                new_node = self.current_node.parent
-                self.current_node = new_node
-            else:
-                return
+                self.current_node = self.current_node.parent
+            return
         else:
-            new_node = self.current_node.get_child(next)
+            new_node = self.current_node.get_child(next_node)
             if new_node and new_node.meta.get('type') == 'folder':
                 self.current_node = new_node
-            else:
-                print('Invalid path')
+                return
+        raise InvalidPath(next_node)
+
+    def _goto(self, args):
+        node = self.tree.find_path(args)
+        if node is None:
+            print('Not found')
+            return
+        if node.meta.get('type') == 'file':
+            self.current_node = node.parent or node
+        else:
+            self.current_node = node
 
     def do_quit(self, args):
         return True

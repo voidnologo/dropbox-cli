@@ -9,8 +9,8 @@ class PathTree:
         'ascii-emh': ('\u2502', '\u255e\u2550 ', '\u2558\u2550 '),
     }
 
-    def __init__(self, val=None):
-        self.value = val or '/'
+    def __init__(self, val=''):
+        self.value = val
         self.children = []
         self.parent = None
         self.meta = dict()
@@ -78,7 +78,9 @@ class PathTree:
             yield from self.parent.get_ancestors()
 
     def get_path(self):
-        return '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))[1:]
+        if self.parent is None:
+            return '/' + self.value
+        return '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))
 
     def display(self, level=0):
         out = '    ' * level + self.value + '\n'
