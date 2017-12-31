@@ -10,9 +10,8 @@ class BaseCommandTest(TestCase):
 
     def setUp(self):
         self.main = MainLoop()
-        self.tree = self.create_tree()
-        self.main.tree = self.root
-        self.main.current_node = self.main.tree
+        self.main.root = self.create_tree()
+        self.main.current_node = self.main.root
 
     def create_tree(self):
         """
@@ -29,6 +28,7 @@ class BaseCommandTest(TestCase):
         self.node3 = self._create_node('n3', self.node1, {'type': 'folder'})
         self.node4 = self._create_node('n4', self.node2, {'type': 'file', 'modified': '2012-12-25', 'size': '12345'})
         self.node5 = self._create_node('n5', self.node2, {'type': 'folder'})
+        return self.root
 
     def _create_node(self, val, parent, meta):
         node = Tree(val)
@@ -53,10 +53,10 @@ class CDCommandTests(BaseCommandTest):
         self.main._cd('..')
         self.assertEqual(self.main.current_node, self.root)
 
-    def test_trying_to_cd_into_a_file_raises_InvalidPath_exception(self):
+    def test_trying_to_cd_into_a_file_sets_current_node_to_parent_of_file(self):
         self.main.current_node = self.node2
-        with self.assertRaises(InvalidPath):
-            self.main._cd('n4')
+        self.main._cd('n4')
+        self.assertEqual(self.main.current_node, self.node2)
 
     def test_cd_to_a_node_that_does_not_exist_raises_InvalidPath_exception(self):
         with self.assertRaises(InvalidPath):
@@ -66,9 +66,18 @@ class CDCommandTests(BaseCommandTest):
         with self.assertRaises(InvalidPath):
             self.main._cd('')
 
-    def test_goto(self):
-        self.main._goto('/root/n1/n2')
+    def test_cd_with_only_slash_goes_to_root_node(self):
+        self.main._cd('/')
+        self.assertEqual(self.main.current_node, self.root)
+
+    def test_cd_to_an_absolute_path(self):
+        self.main._cd('/root/n1/n2')
         self.assertEqual(self.main.current_node, self.node2)
+
+    def test_cd_to_a_relative_path(self):
+        self.main.current_node = self.node1
+        self.main._cd('n2/n5')
+        self.assertEqual(self.main.current_node, self.node5)
 
 
 class LSCommandTests(BaseCommandTest):

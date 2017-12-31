@@ -21,8 +21,8 @@ class MainLoop(cmd.Cmd):
     def initialize(self):
         token = authenticate.get_user_creds()
         dbutil = DropboxUtils(token=token)
-        self.tree = dbutil.get_tree()
-        self.current_node = self.tree
+        self.root = dbutil.get_tree()
+        self.current_node = self.root
 
     @property
     def prompt(self):
@@ -72,22 +72,12 @@ class MainLoop(cmd.Cmd):
             if self.current_node.parent:
                 self.current_node = self.current_node.parent
             return
-        else:
-            new_node = self.current_node.get_child(next_node)
-            if new_node and new_node.meta.get('type') == 'folder':
-                self.current_node = new_node
-                return
-        raise InvalidPath(next_node)
-
-    def _goto(self, args):
-        node = self.tree.find_path(args)
+        node = self.current_node.find_path(next_node)
         if node is None:
-            print('Not found')
-            return
+            raise InvalidPath(args)
+        self.current_node = node
         if node.meta.get('type') == 'file':
             self.current_node = node.parent or node
-        else:
-            self.current_node = node
 
     def do_quit(self, args):
         return True
