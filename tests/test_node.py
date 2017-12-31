@@ -68,14 +68,16 @@ class TreeTests(TestCase):
         root.add_child(c1)
         self.assertTrue('c1' in root.children)
 
-    def test_adding_a_node_by_path(self):
-        tree = Tree()
-        tree.insert_path('/a')
-        self.assertIsNotNone(tree.get_child('a'))
+    def test_adding_a_node_by_absolute_path(self):
+        tree = Tree('root')
+        tree.insert_path('/root/a')
+        node = tree.get_child('a')
+        self.assertIsNotNone(node)
+        self.assertEqual(node.value, 'a')
 
-    def test_adding_a_nested_path(self):
-        root = Tree()
-        root.insert_path('/a/b')
+    def test_insert_path_adding_a_nested_absolute_path(self):
+        root = Tree('root')
+        root.insert_path('/root/a/b')
         self.assertIsNone(root.parent)
         self.assertEqual(['a'], [_.value for _ in root.children])
         a = root.get_child('a')
@@ -84,20 +86,52 @@ class TreeTests(TestCase):
         b = a.get_child('b')
         self.assertEqual(b.parent, a)
 
-    def test_adding_multiple_nodes_adds_to_children(self):
-        root = Tree()
-        root.insert_path('/a')
-        root.insert_path('/b')
+    def test_insert_path_adding_a_absolute_path_from_a_nested_node(self):
+        root = Tree('root')
+        c1 = Tree('c1')
+        root.add_child(c1)
+        c1.insert_path('/root/a/b')
+        root.formated_print()
+        self.assertIsNone(root.parent)
+        self.assertEqual(['c1', 'a'], [_.value for _ in root.children])
+        a = root.get_child('a')
+        self.assertEqual(a.parent, root)
+        self.assertEqual(['b'], [_.value for _ in a.children])
+        b = a.get_child('b')
+        self.assertEqual(b.parent, a)
+
+    def test_insert_path_adding_a_node_by_relative_path(self):
+        tree = Tree('root')
+        tree.insert_path('a')
+        node = tree.get_child('a')
+        self.assertIsNotNone(node)
+        self.assertEqual(node.value, 'a')
+
+    def test_insert_path_adding_a_nested_relative_path(self):
+        root = Tree('root')
+        root.insert_path('a/b')
+        self.assertIsNone(root.parent)
+        self.assertEqual(['a'], [_.value for _ in root.children])
+        a = root.get_child('a')
+        self.assertEqual(a.parent, root)
+        self.assertEqual(['b'], [_.value for _ in a.children])
+        b = a.get_child('b')
+        self.assertEqual(b.parent, a)
+
+    def test_insert_path_multiple_nodes_adds_to_children(self):
+        root = Tree('root')
+        root.insert_path('/root/a')
+        root.insert_path('/root/b')
         self.assertEqual(['a', 'b'], [_.value for _ in root.children])
         a = root.get_child('a')
         self.assertEqual(a.parent, root)
         b = root.get_child('b')
         self.assertEqual(b.parent, root)
 
-    def test_adding_multiple_nodes_adds_to_children_for_nested_paths(self):
-        root = Tree()
-        root.insert_path('/child/a')
-        root.insert_path('/child/b')
+    def test_insert_path_multiple_nodes_adds_to_children_for_nested_paths(self):
+        root = Tree('root')
+        root.insert_path('/root/child/a')
+        root.insert_path('/root/child/b')
         self.assertEqual(['child'], [_.value for _ in root.children])
         child = root.get_child('child')
         self.assertEqual(child.parent, root)
@@ -106,45 +140,116 @@ class TreeTests(TestCase):
         b = child.get_child('b')
         self.assertEqual(b.parent, child)
 
+    def test_origin_from_path_returns_relative_to_root_if_path_starts_with_slash(self):
+        root = Tree('root')
+        child = Tree('child')
+        root.add_child(child)
+        node, parts = child._origin_from_path('/root/child')
+        self.assertEqual(root, node)
+        self.assertEqual(['child'], parts)
+
+    def test_origin_from_path_returns_relative_to_current_node_if_path_does_not_start_with_slash(self):
+        root = Tree('root')
+        child1 = Tree('child1')
+        child2 = Tree('child2')
+        root.add_child(child1)
+        child1.add_child(child2)
+        node, parts = child1._origin_from_path('child2')
+        self.assertEqual(child1, node)
+        self.assertEqual(['child2'], parts)
+
     def test_adding_a_node_more_than_once_only_creates_one_instance(self):
-        root = Tree()
+        root = Tree('root')
         root.insert_path('a')
         root.insert_path('a')
         self.assertEqual(1, len(root.children))
         self.assertEqual(['a'], [_.value for _ in root.children])
 
-    def test_find_node(self):
-        root = Tree()
+    def test_get_root(self):
+        root = Tree('root')
         child = Tree('a')
         root.add_child(child)
-        node = root.find_path('/a')
+        found = child.get_root()
+        self.assertEqual(found, root)
+
+    def test_get_root_returns_self_if_starting_at_root(self):
+        root = Tree('root')
+        found = root.get_root()
+        self.assertEqual(found, root)
+
+    def test_find_node_with_absolute_path(self):
+        root = Tree('root')
+        child = Tree('a')
+        root.add_child(child)
+        node = root.find_path('/root/a')
         self.assertEqual(node, child)
 
-    def test_find_node_returns_None_if_node_does_not_exist(self):
-        root = Tree()
+    def test_find_node_with_absolute_path_returns_None_if_node_does_not_exist(self):
+        root = Tree('root')
         child = Tree('a')
         root.add_child(child)
+        node = root.find_path('/root/b')
+        self.assertIsNone(node)
         node = root.find_path('/b')
         self.assertIsNone(node)
 
-    def test_find_nested_node(self):
-        root = Tree()
+    def test_find_nested_node_with_absoulte_path(self):
+        root = Tree('root')
         a = Tree('a')
         root.add_child(a)
         b = Tree('b')
         a.add_child(b)
-        node = root.find_path('/a/b')
+        node = root.find_path('/root/a/b')
         self.assertEqual(node, b)
 
+    def test_find_node_with_relative_path(self):
+        root = Tree('root')
+        child = Tree('a')
+        root.add_child(child)
+        node = root.find_path('a')
+        self.assertEqual(node, child)
+
+    def test_find_node_with_relative_path_returns_None_if_node_does_not_exist(self):
+        root = Tree('root')
+        child = Tree('a')
+        root.add_child(child)
+        node = root.find_path('b')
+        self.assertIsNone(node)
+        node = root.find_path('/b')
+        self.assertIsNone(node)
+
+    def test_find_nested_node_with_relative_path(self):
+        root = Tree('root')
+        a = Tree('a')
+        root.add_child(a)
+        b = Tree('b')
+        a.add_child(b)
+        node = root.find_path('a/b')
+        self.assertEqual(node, b)
+
+    def test_find_with_just_a_slash_returns_root_node(self):
+        root = Tree('root')
+        node = root.find_path('/')
+        self.assertEqual(node, root)
+
+    def test_find_with_just_a_slash_returns_root_node_from_a_nested_path(self):
+        root = Tree('root')
+        a = Tree('a')
+        root.add_child(a)
+        b = Tree('b')
+        a.add_child(b)
+        node = b.find_path('/')
+        self.assertEqual(node, root)
+
     def test_get_ancestors(self):
-        root = Tree()
+        root = Tree('root')
         a = Tree('a')
         root.add_child(a)
         ancestors = list(a.get_ancestors())
         self.assertEqual(ancestors, [root])
 
     def test_get_ancestors_on_nested_path(self):
-        root = Tree()
+        root = Tree('root')
         a = Tree('a')
         root.add_child(a)
         b = Tree('b')
@@ -153,25 +258,20 @@ class TreeTests(TestCase):
         self.assertEqual(ancestors, [a, root])
 
     def test_get_path_string(self):
-        root = Tree()
+        root = Tree('root')
         a = Tree('a')
         root.add_child(a)
         path = a.get_path()
-        self.assertEqual(path, '/a')
+        self.assertEqual(path, '/root/a')
 
     def test_get_path_string_on_nested_path(self):
-        root = Tree()
+        root = Tree('root')
         a = Tree('a')
         root.add_child(a)
         b = Tree('b')
         a.add_child(b)
         path = b.get_path()
-        self.assertEqual(path, '/a/b')
-
-    def test_root_node_has_path_of_forward_slash(self):
-        root = Tree()
-        path = root.get_path()
-        self.assertEqual(path, '/')
+        self.assertEqual(path, '/root/a/b')
 
     def test_root_node_has_path_of_forward_slash_plus_value(self):
         root = Tree('root')

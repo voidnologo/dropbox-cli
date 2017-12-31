@@ -9,7 +9,7 @@ class PathTree:
         'ascii-emh': ('\u2502', '\u255e\u2550 ', '\u2558\u2550 '),
     }
 
-    def __init__(self, val=''):
+    def __init__(self, val):
         self.value = val
         self.children = []
         self.parent = None
@@ -29,48 +29,61 @@ class PathTree:
     def __eq__(self, comp):
         return self.value == comp
 
+    @property
+    def is_root(self):
+        return self.parent is None
+
     def add_child(self, node):
         node.parent = self
-        if self.children:
-            self.children.append(node)
-        else:
-            self.children = [node]
+        self.children.append(node)
 
     def get_child(self, identifier):
         if not self.children:
             return None
         return next((child for child in self.children if child.value == identifier), None)
 
+    def _origin_from_path(self, node_path):
+        parts = self._get_path_parts(node_path)
+        node = self
+        if node_path.startswith('/'):
+            node = self.get_root()
+            if parts and parts[0] == node.value:
+                parts.pop(0)
+        return node, parts
+
     def _get_path_parts(self, node_path):
         parts = node_path.split('/')
         return parts[1:] if node_path.startswith('/') else parts
 
     def insert_path(self, node_path):
-        parts = self._get_path_parts(node_path)
-        self._insert_node(parts)
+        node, parts = self._origin_from_path(node_path)
+        self._insert_node(node, parts)
 
-    def _insert_node(self, path):
+    def _insert_node(self, node, path):
         val = path.pop(0)
-        contains = self.get_child(val)
-        if contains:
-            if len(path) > 0:
-                contains._insert_node(path)
-        else:
-            child = PathTree(val)
-            self.add_child(child)
-            if len(path) > 0:
-                child._insert_node(path)
+        n = node.get_child(val)
+        if not n:
+            n = PathTree(val)
+            node.add_child(n)
+        if len(path) > 0:
+            n._insert_node(n, path)
 
     def find_path(self, node_path):
-        parts = self._get_path_parts(node_path)
-        return self._find_node(parts)
+        if node_path == '/':
+            return self.get_root()
+        node, parts = self._origin_from_path(node_path)
+        return self._find_node(node, parts)
 
-    def _find_node(self, path):
+    def _find_node(self, node, path):
         val = path.pop(0)
-        contains = self.get_child(val)
+        contains = node.get_child(val)
         if len(path) > 0:
-            return contains._find_node(path)
+            return contains._find_node(contains, path)
         return contains
+
+    def get_root(self):
+        ancestors = list(self.get_ancestors())
+        return ancestors[-1] if ancestors else self
 
     def get_ancestors(self):
         if self.parent is not None:
@@ -80,7 +93,7 @@ class PathTree:
     def get_path(self):
         if self.parent is None:
             return '/' + self.value
-        return '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))
+        return '/' + '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))
 
     def display(self, level=0):
         out = '    ' * level + self.value + '\n'
