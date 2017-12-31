@@ -47,7 +47,7 @@ class DropboxUtils:
             yield delta_response
 
     def get_tree(self):
-        tree = PathTree()
+        tree = PathTree(root=True)
         for response in self.contents:
             for entry in response.entries:
                 tree.insert_path(entry.path_display)

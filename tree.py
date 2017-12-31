@@ -9,8 +9,8 @@ class PathTree:
         'ascii-emh': ('\u2502', '\u255e\u2550 ', '\u2558\u2550 '),
     }
 
-    def __init__(self, val):
-        self.value = val
+    def __init__(self, val=None, root=False):
+        self.value = val if not root else val or '/'
         self.children = []
         self.parent = None
         self.meta = dict()
@@ -86,14 +86,17 @@ class PathTree:
         return ancestors[-1] if ancestors else self
 
     def get_ancestors(self):
-        if self.parent is not None:
+        if not self.is_root:
             yield self.parent
             yield from self.parent.get_ancestors()
 
     def get_path(self):
-        if self.parent is None:
-            return '/' + self.value
-        return '/' + '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))
+        path = '/'.join(reversed([self.value] + [_.value for _ in self.get_ancestors()]))
+        if path.startswith('//'):
+            return path[1:]
+        if not path.startswith('/'):
+            return '/' + path
+        return path
 
     def display(self, level=0):
         out = '    ' * level + self.value + '\n'

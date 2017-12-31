@@ -241,6 +241,15 @@ class TreeTests(TestCase):
         node = b.find_path('/')
         self.assertEqual(node, root)
 
+    def test_find_with_absolute_path_with_root_node_is_defaulted_slash(self):
+        root = Tree(root=True)
+        a = Tree('a')
+        root.add_child(a)
+        b = Tree('b')
+        a.add_child(b)
+        node = b.find_path('/a/b')
+        self.assertEqual(node, b)
+
     def test_get_ancestors(self):
         root = Tree('root')
         a = Tree('a')
@@ -277,3 +286,20 @@ class TreeTests(TestCase):
         root = Tree('root')
         path = root.get_path()
         self.assertEqual(path, '/root')
+
+    def test_get_path_when_root_node_has_value_of_slash_doesnt_show_double_slash(self):
+        root = Tree(root=True)
+        path = root.get_path()
+        self.assertEqual(path, '/')
+
+    def test_if_node_is_marked_as_root_and_no_value_passed_set_val_to_slash(self):
+        root = Tree(root=True)
+        self.assertEqual(root.value, '/')
+
+    def test_if_node_is_marked_as_root_and_value_passed_set_val_to_passed(self):
+        root = Tree('root', root=True)
+        self.assertEqual(root.value, 'root')
+
+    def test_if_node_is_not_marked_as_root_and_no_value_passed_set_val_to_None(self):
+        root = Tree()
+        self.assertIsNone(root.value)
