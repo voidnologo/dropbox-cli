@@ -303,3 +303,70 @@ class TreeTests(TestCase):
     def test_if_node_is_not_marked_as_root_and_no_value_passed_set_val_to_None(self):
         root = Tree()
         self.assertIsNone(root.value)
+
+    def test_search(self):
+        root = Tree('root')
+        a = Tree('a')
+        root.add_child(a)
+        results = root.search('a')
+        self.assertEqual(results, [a])
+
+    def test_search_returns_empty_list_if_no_finds(self):
+        root = Tree('root')
+        a = Tree('a')
+        root.add_child(a)
+        results = root.search('nope')
+        self.assertEqual(results, [])
+
+    def test_search_returns_multiple_nodes_if_match_search_target(self):
+        root = Tree('root')
+        a1 = Tree('a')
+        root.add_child(a1)
+        a2 = Tree('a')
+        root.add_child(a2)
+        results = root.search('a')
+        self.assertEqual(results, [a1, a2])
+
+    def test_search_returns_multiple_nodes_even_if_at_different_parts_of_the_tree(self):
+        root = Tree('root')
+        a1 = Tree('a')
+        root.add_child(a1)
+        b = Tree('b')
+        a1.add_child(b)
+        a2 = Tree('a')
+        b.add_child(a2)
+        results = root.search('a')
+        self.assertEqual(results, [a1, a2])
+
+    def test_search_finds_all_nodes_whose_value_contains_seach_string(self):
+        root = Tree('root')
+        a1 = Tree('abc')
+        root.add_child(a1)
+        b = Tree('b')
+        a1.add_child(b)
+        a2 = Tree('xyzabc')
+        b.add_child(a2)
+        results = root.search('abc')
+        self.assertEqual(results, [a1, a2])
+
+    def test_search_finds_only_nodes_with_exact_match_if_exact_param_set_to_true(self):
+        root = Tree('root')
+        a1 = Tree('abc')
+        root.add_child(a1)
+        b = Tree('b')
+        a1.add_child(b)
+        a2 = Tree('xyzabc')
+        b.add_child(a2)
+        results = root.search('abc', exact=True)
+        self.assertEqual(results, [a1])
+
+    def test_search_finds_only_nodes_relative_to_current_node_if_relative_set_to_true(self):
+        root = Tree('root')
+        a1 = Tree('abc')
+        root.add_child(a1)
+        b = Tree('b')
+        a1.add_child(b)
+        a2 = Tree('xyzabc')
+        b.add_child(a2)
+        results = b.search('abc', relative=True)
+        self.assertEqual(results, [a2])

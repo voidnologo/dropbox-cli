@@ -100,10 +100,19 @@ class PathTree:
 
     def display(self, level=0):
         out = '    ' * level + self.value + '\n'
-        if self.children:
-            for child in self.children:
-                out += child.display(level + 1)
+        for child in self.children:
+            out += child.display(level + 1)
         return out
+
+    def search(self, target, exact=False, relative=False):
+        node = self if relative else self.get_root()
+        return list(self._search(node, target, exact))
+
+    def _search(self, node, target, exact):
+        if (not exact and target in node.value) or (exact and node.value == target):
+            yield node
+        for child in node.children:
+            yield from self._search(child, target, exact)
 
 # ====================================================================================================
 

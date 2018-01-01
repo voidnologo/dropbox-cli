@@ -1,5 +1,6 @@
 import cmd
 from itertools import zip_longest
+import shlex
 import shutil
 
 import authenticate
@@ -8,21 +9,10 @@ from dropbox_utils import DropboxUtils
 from tree import PathTree
 
 
-class MainLoop(cmd.Cmd):
-    welcome = 'Dropbox-CLI'
+class TreeFS(cmd.Cmd):
     doc_header = 'Commands'
     undoc_header = 'No help available'
     ruler = '-'
-
-    def preloop(self):
-        print(self.welcome)
-        self.initialize()
-
-    def initialize(self):
-        token = authenticate.get_user_creds()
-        dbutil = DropboxUtils(token=token)
-        self.root = dbutil.get_tree()
-        self.current_node = self.root
 
     @property
     def prompt(self):
@@ -52,13 +42,16 @@ class MainLoop(cmd.Cmd):
         for child in self.current_node.children:
             ind = '/' if child.meta.get('type') == 'folder' else ''
             items.append('{}{}'.format(child.value, ind))
-        items.sort()
         if items:
-            size = max(len(_) for _ in items) + 3
-            cols = shutil.get_terminal_size().columns // size
-            entry = '{{:<{size}}}'.format(size=size)
-            for row in zip_longest(*[iter(items)] * cols, fillvalue=''):
-                yield (entry * cols).format(*row)
+            items.sort()
+            yield from self._column_format(items)
+
+    def _column_format(self, items):
+        size = max(len(_) for _ in items) + 3
+        cols = shutil.get_terminal_size().columns // size
+        entry = '{{:<{size}}}'.format(size=size)
+        for row in zip_longest(*[iter(items)] * cols, fillvalue=''):
+            yield (entry * cols).format(*row)
 
     def do_cd(self, args):
         try:
@@ -79,12 +72,53 @@ class MainLoop(cmd.Cmd):
         if node.meta.get('type') == 'file':
             self.current_node = node.parent or node
 
+    def do_find(self, args):
+        """
+        Search tree for target
+
+        Defaults
+            > case sensitive
+            > find all values that contain search term
+            > whole tree search
+
+        -e : Do an exact match
+        -r : Search relative to current node
+        """
+        found = self._find(args)
+        if found:
+            for line in (_.get_path() for _ in found):
+                print(line)
+        else:
+            print('No search results found')
+
+    def _find(self, args):
+        args = list(shlex.shlex(args, punctuation_chars=True, posix=True))
+        flags = (('exact', '-e'), ('relative', '-r'))
+        kwargs, remainder = self._parse_flags(flags, args)
+        target = ' '.join(remainder)
+        return self.current_node.search(target, **kwargs)
+
+    def _parse_flags(self, parse_keys, data):
+        """
+        IN:
+            `parse_keys` > collection of (key, flag) pairs where `key` is name to return whether flag exists or not
+            and data to act on
+        OUT:
+            dictionary of key: bool for each flag and the remaining data
+            after the flags have been stripped
+        """
+        flags = {}
+        for f in parse_keys:
+            try:
+                i = data.index(f[1])
+                data.pop(i)
+                flags[f[0]] = True
+            except ValueError:
+                flags[f[0]] = False
+        return flags, data
+
     def do_quit(self, args):
         return True
 
     def do_exit(self, args):
         return True
-
-
-if __name__ == "__main__":
-    MainLoop().cmdloop()
