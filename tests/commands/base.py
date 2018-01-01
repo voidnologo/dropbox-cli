@@ -1,13 +1,13 @@
 from unittest import TestCase
 
-from main import MainLoop
+from tree_fs import TreeFS
 from tree import PathTree as Tree
 
 
 class BaseCommandTest(TestCase):
 
     def setUp(self):
-        self.main = MainLoop()
+        self.main = TreeFS()
         self.main.root = self.create_tree()
         self.main.current_node = self.main.root
 
