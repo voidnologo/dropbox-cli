@@ -9,7 +9,7 @@ from tree import PathTree as Tree
 class TreeDisplayTests(TestCase):
 
     def setUp(self):
-        self.tree = Tree()
+        self.tree = Tree(root=True)
         self.tree.insert_path('/a/b/c/d')
         self.tree.insert_path('/a/b/f')
         self.tree.insert_path('/a/b/f/g')
@@ -18,7 +18,7 @@ class TreeDisplayTests(TestCase):
         self.tree.insert_path('/a/h')
 
     def test_display_tree(self):
-        root = Tree()
+        root = Tree(root=True)
         root.insert_path('/a')
         expected = textwrap.dedent('''
         /
