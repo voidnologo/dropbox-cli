@@ -1,10 +1,14 @@
 #!python
 
 import configparser
+import os
 from pathlib import Path
 
 
-CREDS_PATH = Path.home().joinpath('.dropbox_cli')
+try:
+    CREDS_PATH = Path.home().joinpath('.dropbox_cli')
+except AttributeError:
+    CREDS_PATH = Path(os.path.expanduser('~')).joinpath('.dropbox_cli')
 CREDS_FILE = CREDS_PATH.joinpath('dropbox_cli.ini')
 
 
