@@ -97,7 +97,7 @@ class TreeFS(cmd.Cmd):
             print('No search results found')
 
     def _find(self, args):
-        args = list(shlex.shlex(args, punctuation_chars=True, posix=True))
+        args = shlex.split(args, posix=True)
         flags = (('exact', '-e'), ('relative', '-r'))
         kwargs, remainder = self._parse_flags(flags, args)
         target = ' '.join(remainder)
