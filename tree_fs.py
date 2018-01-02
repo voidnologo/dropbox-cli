@@ -21,11 +21,14 @@ class TreeFS(cmd.Cmd):
     def do_tree(self, args):
         """
         Pretty print tree.
-        Draw Types:
-            'ascii': plain ascii
-            'ascii-ex': line drawing
+
+        --> tree [style]
+
+        Draw Styles:
+            'ascii'    : plain ascii
+            'ascii-ex' : line drawing
             'ascii-exr': line drawing, rounded corners
-            'ascii-em': emphasis line drawing
+            'ascii-em' : emphasis line drawing
             'ascii-emv': vertical lines emphasized line drawing
             'ascii-emh': horizontal lines emphasized line drawing
         """
@@ -75,6 +78,8 @@ class TreeFS(cmd.Cmd):
     def do_find(self, args):
         """
         Search tree for target
+
+        --> find target [-e] [-r]
 
         Defaults
             > case sensitive
