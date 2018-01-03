@@ -6,6 +6,12 @@ from tree import PathTree
 from tree_fs import TreeFS
 
 
+ENDC = '\033[0m'
+BOLD = '\033[1m'
+FG_BOLD_YELLOW = '\033[93m'
+FG_CYAN = '\033[36m'
+
+
 class DropboxCLI(TreeFS):
     welcome = 'Dropbox-CLI'
     doc_header = 'Commands'
@@ -14,6 +20,21 @@ class DropboxCLI(TreeFS):
 
     def preloop(self):
         print(self.welcome)
+
+    @property
+    def prompt(self):
+        return '{}[{}] --> {}'.format(FG_BOLD_YELLOW, self.current_node.get_path(), ENDC)
+
+    # def _ls(self):
+    #     items = []
+    #     for child in self.current_node.children:
+              # TODO: color code adds 8 characters to item when calculating column, but since they are color codes, not displayed
+              #       by the terminal causing the line alignment to be off
+    #         ind, color, endc = ('/', FG_CYAN, ENDC) if child.meta.get('type') == 'folder' else ('', '', '')
+    #         items.append('{}{}{}{}'.format(color, child.value, ind, endc))
+    #     if items:
+    #         items.sort()
+    #         yield from self._column_format(items)  # flake8: noqa
 
 
 def cmd_line_options():
