@@ -3,7 +3,6 @@ from itertools import zip_longest
 import shlex
 import shutil
 
-import authenticate
 from exceptions import InvalidPath
 from dropbox_utils import DropboxUtils
 from tree import PathTree
@@ -13,6 +12,11 @@ class TreeFS(cmd.Cmd):
     doc_header = 'Commands'
     undoc_header = 'No help available'
     ruler = '-'
+
+    def __init__(self, tree, *args, **kwargs):
+        self.root = tree
+        self.current_node = self.root
+        super().__init__(*args, **kwargs)
 
     @property
     def prompt(self):
@@ -47,7 +51,7 @@ class TreeFS(cmd.Cmd):
             items.append('{}{}'.format(child.value, ind))
         if items:
             items.sort()
-            yield from self._column_format(items)
+            yield from self._column_format(items)  # flake8: noqa
 
     def _column_format(self, items):
         size = max(len(_) for _ in items) + 3
@@ -91,7 +95,7 @@ class TreeFS(cmd.Cmd):
         """
         found = self._find(args)
         if found:
-            for line in (_.get_path() for _ in found):
+            for line in sorted(_.get_path() for _ in found):
                 print(line)
         else:
             print('No search results found')
