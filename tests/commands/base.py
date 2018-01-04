@@ -7,9 +7,8 @@ from tree import PathTree as Tree
 class BaseCommandTest(TestCase):
 
     def setUp(self):
-        self.main = TreeFS()
-        self.main.root = self.create_tree()
-        self.main.current_node = self.main.root
+        tree = self.create_tree()
+        self.main = TreeFS(tree)
 
     def create_tree(self):
         """

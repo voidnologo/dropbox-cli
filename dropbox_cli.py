@@ -25,42 +25,27 @@ class DropboxCLI(TreeFS):
     def prompt(self):
         return '{}[{}] --> {}'.format(FG_BOLD_YELLOW, self.current_node.get_path(), ENDC)
 
-    # def _ls(self):
-    #     items = []
-    #     for child in self.current_node.children:
-              # TODO: color code adds 8 characters to item when calculating column, but since they are color codes, not displayed
-              #       by the terminal causing the line alignment to be off
-    #         ind, color, endc = ('/', FG_CYAN, ENDC) if child.meta.get('type') == 'folder' else ('', '', '')
-    #         items.append('{}{}{}{}'.format(color, child.value, ind, endc))
-    #     if items:
-    #         items.sort()
-    #         yield from self._column_format(items)  # flake8: noqa
-
 
 def cmd_line_options():
-    parser = argparse.ArgumentParser(prog='Dropbox-CLI', formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.description = """
-    Purpose:
-
-    Input: -
-
-    Output:
-
-    Usage:
-
-    Note:
-    """
+    parser = argparse.ArgumentParser(prog='Dropbox-CLI')
     parser.add_argument(
         '-f', '--file',
         dest='input_file',
         help='File containing file paths to initialize tree with'
     )
+    parser.add_argument(
+        '-t', '--token',
+        default=None,
+        dest='dropbox_token',
+        help='Dropbox oauth token'
+    )
     args = parser.parse_args()
     return args
 
 
-def init_tree_from_dropbox_account():
-    token = authenticate.get_user_creds()
+def init_tree_from_dropbox_account(token=None):
+    if token is None:
+        token = authenticate.get_user_creds()
     dbutil = DropboxUtils(token=token)
     tree = dbutil.get_tree()
     return tree
@@ -87,6 +72,6 @@ if __name__ == "__main__":
     if args.input_file:
         tree = init_tree_from_file(args.input_file)
     else:
-        tree = init_tree_from_dropbox_account()
+        tree = init_tree_from_dropbox_account(args.dropbox_token)
 
     DropboxCLI(tree).cmdloop()
