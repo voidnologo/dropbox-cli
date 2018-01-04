@@ -2,8 +2,8 @@ import cmd
 from itertools import zip_longest
 import shlex
 import shutil
+import textwrap
 
-import authenticate
 from exceptions import InvalidPath
 from dropbox_utils import DropboxUtils
 from tree import PathTree
@@ -14,9 +14,18 @@ class TreeFS(cmd.Cmd):
     undoc_header = 'No help available'
     ruler = '-'
 
+    def __init__(self, tree, *args, **kwargs):
+        self.root = tree
+        self.current_node = self.root
+        super().__init__(*args, **kwargs)
+
     @property
     def prompt(self):
         return '[{}] --> '.format(self.current_node.get_path())
+
+    def fprint(self, line):
+        prefix = ' ' * 4
+        print(textwrap.indent(line, prefix))
 
     def do_tree(self, args):
         """
@@ -38,7 +47,7 @@ class TreeFS(cmd.Cmd):
 
     def do_ls(self, args):
         for line in self._ls():
-            print(line)
+            self.fprint(line)
 
     def _ls(self):
         items = []
@@ -47,7 +56,7 @@ class TreeFS(cmd.Cmd):
             items.append('{}{}'.format(child.value, ind))
         if items:
             items.sort()
-            yield from self._column_format(items)
+            yield from self._column_format(items)  # flake8: noqa
 
     def _column_format(self, items):
         size = max(len(_) for _ in items) + 3
@@ -60,7 +69,7 @@ class TreeFS(cmd.Cmd):
         try:
             self._cd(args)
         except InvalidPath as e:
-            print('Invalid Path: {}'.format(e))
+            self.fprint('Invalid Path: {}'.format(e))
 
     def _cd(self, args):
         next_node = args.strip()
@@ -91,10 +100,10 @@ class TreeFS(cmd.Cmd):
         """
         found = self._find(args)
         if found:
-            for line in (_.get_path() for _ in found):
-                print(line)
+            for line in sorted(_.get_path() for _ in found):
+                self.fprint(line)
         else:
-            print('No search results found')
+            self.fprint('No search results found')
 
     def _find(self, args):
         args = shlex.split(args, posix=True)
