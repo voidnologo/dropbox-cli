@@ -49,11 +49,14 @@ class DropboxHelper():
         return test_token
 
     def get_dropbox_client(self):
+        return Dropbox(self.dropbox_token)
+
+    @property
+    def dropbox_token(self):
         try:
-            token = self.get_token_from_env_variables()
+            return self.get_token_from_env_variables()
         except TestConfigException:
-            token = self.get_token_from_credential_file()
-        return Dropbox(token)
+            return self.get_token_from_credential_file()
 
     def purge_files(self):
         try:

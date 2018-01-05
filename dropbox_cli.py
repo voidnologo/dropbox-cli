@@ -1,8 +1,8 @@
-import argparse
+from contextlib import closing
+from pathlib import Path
 
-import authenticate
-from dropbox_utils import DropboxUtils
-from tree import PathTree
+import dropbox
+
 from tree_fs import TreeFS
 
 
@@ -18,60 +18,25 @@ class DropboxCLI(TreeFS):
     undoc_header = 'No help available'
     ruler = '-'
 
+    def __init__(self, tree, *args, token=None, **kwargs):  # flake8: noqa
+        assert token is not None, 'Dropbox oauth token required to use Dropbox'
+        self.client = dropbox.Dropbox(token)
+        super().__init__(tree, *args, **kwargs)
+
     def preloop(self):
         print(self.welcome)
+
+    def do_get(self, args):
+        self._get(args)
+
+    def _get(self, file_path, download_location):
+        meta_data, dropbox_file = self.client.files_download(file_path)
+        with closing(dropbox_file) as db_file:
+            content = db_file.content
+        target = Path(download_location).joinpath(meta_data.name)
+        with open(target, 'wb') as dl:
+            dl.write(content)
 
     @property
     def prompt(self):
         return '{}[{}] --> {}'.format(FG_BOLD_YELLOW, self.current_node.get_path(), ENDC)
-
-
-def cmd_line_options():
-    parser = argparse.ArgumentParser(prog='Dropbox-CLI')
-    parser.add_argument(
-        '-f', '--file',
-        dest='input_file',
-        help='File containing file paths to initialize tree with'
-    )
-    parser.add_argument(
-        '-t', '--token',
-        default=None,
-        dest='dropbox_token',
-        help='Dropbox oauth token'
-    )
-    args = parser.parse_args()
-    return args
-
-
-def init_tree_from_dropbox_account(token=None):
-    if token is None:
-        token = authenticate.get_user_creds()
-    dbutil = DropboxUtils(token=token)
-    tree = dbutil.get_tree()
-    return tree
-
-
-def init_tree_from_file(input_file):
-    with open(input_file, 'r') as f:
-        tree = PathTree(root=True)
-        for line in f:
-            tree.insert_path(line.strip())
-            node = tree.find_path(line.strip())
-            node.meta = {
-                'type': 'file',
-                'id': '',
-                'modified': '',
-                'size': '',
-                'details': 'added from file'
-            }
-    return tree
-
-
-if __name__ == "__main__":
-    args = cmd_line_options()
-    if args.input_file:
-        tree = init_tree_from_file(args.input_file)
-    else:
-        tree = init_tree_from_dropbox_account(args.dropbox_token)
-
-    DropboxCLI(tree).cmdloop()
