@@ -13,7 +13,7 @@ class TreeFSParsers:
 
     @classmethod
     def _find_parser(cls):
-        parser = Parser(prog=' ')
+        parser = Parser(prog='find')
         parser.add_argument(
             '-e', '--exact',
             action='store_true',
