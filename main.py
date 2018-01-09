@@ -2,7 +2,7 @@ import argparse
 
 import authenticate
 from dropbox_cli import DropboxCLI
-from dropbox_utils import DropboxUtils
+from utils import DropboxUtils
 from tree import PathTree
 from tree_fs import TreeFS
 

@@ -5,8 +5,33 @@ import shutil
 import textwrap
 
 from exceptions import InvalidPath
-from dropbox_utils import DropboxUtils
+from utils import DropboxUtils, Parser, set_docstring_from_parser
 from tree import PathTree
+
+
+class TreeFSParsers:
+
+    @classmethod
+    def _find_parser(cls):
+        parser = Parser(prog=' ')
+        parser.add_argument(
+            '-e', '--exact',
+            action='store_true',
+            default=False,
+            help='Do an exact string match'
+        )
+        parser.add_argument(
+            '-r', '--relative',
+            action='store_true',
+            default=False,
+            help='Search relative to current path'
+        )
+        parser.add_argument(
+            'target',
+            nargs='*',
+            help='Target to search for'
+        )
+        return parser
 
 
 class TreeFS(cmd.Cmd):
@@ -84,21 +109,18 @@ class TreeFS(cmd.Cmd):
         if node.meta.get('type') == 'file':
             self.current_node = node.parent or node
 
+
+    @set_docstring_from_parser(TreeFSParsers._find_parser)
     def do_find(self, args):
-        """
-        Search tree for target
-
-        --> find target [-e] [-r]
-
-        Defaults
-            > case sensitive
-            > find all values that contain search term
-            > whole tree search
-
-        -e : Do an exact match
-        -r : Search relative to current node
-        """
-        found = self._find(args)
+        parser = TreeFSParsers._find_parser()
+        args = parser.parse_args(shlex.split(args, posix=True))
+        if not args.target:
+            return
+        try:
+            found = self._find(args)
+        except ParserError as e:
+            print(e)
+            return
         if found:
             for line in sorted(_.get_path() for _ in found):
                 self.fprint(line)
@@ -106,30 +128,8 @@ class TreeFS(cmd.Cmd):
             self.fprint('No search results found')
 
     def _find(self, args):
-        args = shlex.split(args, posix=True)
-        flags = (('exact', '-e'), ('relative', '-r'))
-        kwargs, remainder = self._parse_flags(flags, args)
-        target = ' '.join(remainder)
-        return self.current_node.search(target, **kwargs)
-
-    def _parse_flags(self, parse_keys, data):
-        """
-        IN:
-            `parse_keys` > collection of (key, flag) pairs where `key` is name to return whether flag exists or not
-            and data to act on
-        OUT:
-            dictionary of key: bool for each flag and the remaining data
-            after the flags have been stripped
-        """
-        flags = {}
-        for f in parse_keys:
-            try:
-                i = data.index(f[1])
-                data.pop(i)
-                flags[f[0]] = True
-            except ValueError:
-                flags[f[0]] = False
-        return flags, data
+        target = ' '.join(args.target)
+        return self.current_node.search(target, exact=args.exact, relative=args.relative)
 
     def do_quit(self, args):
         return True

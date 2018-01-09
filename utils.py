@@ -1,6 +1,22 @@
+import argparse
+from contextlib import redirect_stdout
+from io import StringIO
 import dropbox
 
 from tree import PathTree
+
+
+class ParserError(Exception):
+    pass
+
+
+class Parser(argparse.ArgumentParser):
+
+    def error(self, message):
+        raise ParserError(message)
+
+    def exit(self, *args, **kwargs):
+        pass
 
 
 class cached_property:
@@ -69,3 +85,13 @@ class DropboxUtils:
     @cached_property
     def contents(self):
         return list(self.get_all_files())
+
+
+def set_docstring_from_parser(parser):
+    def wrapper(func):
+        out = StringIO()
+        with redirect_stdout(out):
+            parser().print_help()
+        func.__doc__ = out.getvalue()
+        return func
+    return wrapper
