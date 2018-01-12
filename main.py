@@ -20,14 +20,20 @@ def cmd_line_options():
         dest='dropbox_token',
         help='Dropbox oauth token'
     )
+    parser.add_argument(
+        '-r', '--root',
+        default=None,
+        dest='root_path',
+        help='Path to use as root for dropbox'
+    )
     args = parser.parse_args()
     return args
 
 
-def init_tree_from_dropbox_account(token=None):
+def init_tree_from_dropbox_account(token=None, root_path=None):
     if token is None:
         token = authenticate.get_user_creds()
-    dbutil = DropboxUtils(token=token)
+    dbutil = DropboxUtils(token=token, root=root_path)
     tree = dbutil.get_tree()
     return tree, token
 
@@ -54,5 +60,5 @@ if __name__ == "__main__":
         tree = init_tree_from_file(args.input_file)
         TreeFS(tree).cmdloop()
     else:
-        tree, token = init_tree_from_dropbox_account(args.dropbox_token)
+        tree, token = init_tree_from_dropbox_account(args.dropbox_token, args.root_path)
         DropboxCLI(tree, token=token).cmdloop()

@@ -39,7 +39,8 @@ class cached_property:
 
 class DropboxUtils:
 
-    def __init__(self, token=None, client=None):
+    def __init__(self, token=None, client=None, root=None):
+        self.root = root
         self.client = client or dropbox.Dropbox(token)
 
     def do_process(self, delta_response):
@@ -47,7 +48,8 @@ class DropboxUtils:
 
     def get_changes(self, cursor):
         if cursor is None:
-            return self.client.files_list_folder('', recursive=True)
+            root = self.root if self.root else ''
+            return self.client.files_list_folder(root, recursive=True)
         return self.client.files_list_folder_continue(cursor)
 
     def get_cursor(self, delta_response):
