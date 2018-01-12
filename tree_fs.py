@@ -40,8 +40,8 @@ class TreeFS(cmd.Cmd):
     ruler = '-'
 
     def __init__(self, tree, *args, **kwargs):
-        self.root = tree
-        self.current_node = self.root
+        self.tree = tree
+        self.current_node = self.tree
         super().__init__(*args, **kwargs)
 
     @property
@@ -94,7 +94,7 @@ class TreeFS(cmd.Cmd):
         try:
             self._cd(args)
         except InvalidPath as e:
-            self.fprint('Invalid Path: {}'.format(e))
+            self.fprint(str(e))
 
     def _cd(self, args):
         next_node = args.strip()

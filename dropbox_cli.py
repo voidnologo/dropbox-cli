@@ -3,6 +3,7 @@ from pathlib import Path
 
 import dropbox
 
+from exceptions import InvalidPath
 from tree_fs import TreeFS
 
 
@@ -27,15 +28,27 @@ class DropboxCLI(TreeFS):
         print(self.welcome)
 
     def do_get(self, args):
-        self._get(args)
+        try:
+            self._get(args)
+        except InvalidPath as e:
+            self.fprint(str(e))
 
     def _get(self, file_path, download_location):
+        if not self.tree.find_path(file_path):
+            raise InvalidPath(file_path)
+        if not Path(download_location).exists():
+            raise InvalidPath('Destination path {} does not exist.  Perhaps you need to create directories first?'.format(download_location))
+        if not Path(download_location).is_dir():
+            raise InvalidPath('Destination path {} is not a directory.'.format(download_location))
         meta_data, dropbox_file = self.client.files_download(file_path)
         with closing(dropbox_file) as db_file:
             content = db_file.content
         target = Path(download_location).joinpath(meta_data.name)
-        with open(target, 'wb') as dl:
-            dl.write(content)
+        try:
+            with open(target, 'wb') as dl:
+                dl.write(content)
+        except FileNotFoundError as e:
+            raise InvalidPath(download_location)
 
     @property
     def prompt(self):

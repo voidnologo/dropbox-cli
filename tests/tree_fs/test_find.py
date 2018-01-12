@@ -51,4 +51,3 @@ class FindCommandTests(BaseCommandTest):
     def inp(self, t=None, r=False, e=False):
         target = t.split(' ')
         return argparse.Namespace(target=target, relative=r, exact=e)
-
