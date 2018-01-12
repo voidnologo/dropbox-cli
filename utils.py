@@ -3,16 +3,15 @@ from contextlib import redirect_stdout
 from io import StringIO
 import dropbox
 
+from exceptions import ParserError
 from tree import PathTree
-
-
-class ParserError(Exception):
-    pass
 
 
 class Parser(argparse.ArgumentParser):
 
     def error(self, message):
+        print(message, '\n')
+        self.print_help()
         raise ParserError(message)
 
     def exit(self, *args, **kwargs):

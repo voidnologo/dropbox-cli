@@ -113,14 +113,14 @@ class TreeFS(cmd.Cmd):
     @set_docstring_from_parser(TreeFSParsers._find_parser)
     def do_find(self, args):
         parser = TreeFSParsers._find_parser()
-        args = parser.parse_args(shlex.split(args, posix=True))
-        if not args.target:
-            return
         try:
-            found = self._find(args)
+            args = parser.parse_args(shlex.split(args, posix=True))
         except ParserError as e:
             print(e)
             return
+        if not args.target:
+            return
+        found = self._find(args)
         if found:
             for line in sorted(_.get_path() for _ in found):
                 self.fprint(line)
