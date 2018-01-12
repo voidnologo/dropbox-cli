@@ -1,10 +1,41 @@
 import argparse
 from contextlib import redirect_stdout
 from io import StringIO
+import itertools
+import threading
+import time
+import sys
+
 import dropbox
 
 from exceptions import ParserError
 from tree import PathTree
+
+
+def wait_animation(func):
+    def wrapper(*args, **kwargs):
+        done = False
+        pulse = (
+            '[-------]', '[⌃------]', '[⌄^-----]', '[-⌄^----]',
+            '[--⌄^---]', '[---⌄^--]', '[----⌄^-]', '[-----⌄^]',
+            '[------⌄]'
+        )
+
+        def animate():
+            for c in itertools.cycle(pulse):
+                if done:
+                    break
+                sys.stdout.write('\rloading ' + c)
+                sys.stdout.flush()
+                time.sleep(0.1)
+
+        t = threading.Thread(target=animate)
+        t.start()
+        result = func(*args, **kwargs)
+        done = True
+        sys.stdout.write('\n')
+        return result
+    return wrapper
 
 
 class Parser(argparse.ArgumentParser):
@@ -63,6 +94,7 @@ class DropboxUtils:
             delta_response = self.get_changes(cursor)
             yield delta_response
 
+    @wait_animation
     def get_tree(self):
         tree = PathTree(root=True)
         for response in self.contents:
