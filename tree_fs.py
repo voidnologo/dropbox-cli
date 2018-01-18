@@ -44,6 +44,12 @@ class TreeFS(cmd.Cmd):
         self.current_node = self.tree
         super().__init__(*args, **kwargs)
 
+    def onecmd(self, *args):
+        try:
+            super().onecmd(*args)
+        except InvalidPath as e:
+            self.fprint(str(e))
+
     @property
     def prompt(self):
         return '[{}] --> '.format(self.current_node.get_path())
@@ -71,17 +77,27 @@ class TreeFS(cmd.Cmd):
         self.current_node.formated_print(line_type=line_type)
 
     def do_ls(self, args):
-        for line in self._ls():
+        node = self.current_node.find_path(args.strip()) if args else self.current_node
+        if node is None:
+            raise InvalidPath(args)
+        method = self._ls_meta if node.meta and node.meta.get('type') != 'folder' else self._ls
+        for line in method(node):
             self.fprint(line)
 
-    def _ls(self):
+    def _ls(self, node):
         items = []
-        for child in self.current_node.children:
+        for child in node.children:
             ind = '/' if child.meta.get('type') == 'folder' else ''
             items.append('{}{}'.format(child.value, ind))
         if items:
             items.sort()
             yield from self._column_format(items)  # flake8: noqa
+
+    def _ls_meta(self, node):
+        meta = sorted(node.meta.items(), key=lambda x: x[0])
+        width = max((len(_[0]) for _ in meta))
+        for k, v in meta:
+            yield '{:>{width}}: {}'.format(k, v, width=width)
 
     def _column_format(self, items):
         size = max(len(_) for _ in items) + 3
@@ -91,10 +107,7 @@ class TreeFS(cmd.Cmd):
             yield (entry * cols).format(*row)
 
     def do_cd(self, args):
-        try:
-            self._cd(args)
-        except InvalidPath as e:
-            self.fprint(str(e))
+        self._cd(args)
 
     def _cd(self, args):
         next_node = args.strip()
