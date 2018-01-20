@@ -36,7 +36,7 @@ class DropboxHelper():
     def get_token_from_credential_file(self):
         if CREDS_FILE.exists():
             config_file = configparser.ConfigParser()
-            config_file.read(CREDS_FILE)
+            config_file.read(str(CREDS_FILE))
             if 'TEST_CREDENTIALS' not in config_file.sections():
                 raise TestConfigException('Cannot find test credentials')
             return config_file['TEST_CREDENTIALS']['oauth_key']

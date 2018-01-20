@@ -72,7 +72,7 @@ class DropboxCLI(TreeFS):
             content = db_file.content
         target = Path(download_location).joinpath(meta_data.name)
         try:
-            with open(target, 'wb') as dl:
+            with open(str(target), 'wb') as dl:
                 dl.write(content)
         except FileNotFoundError as e:
             raise InvalidPath(download_location)
