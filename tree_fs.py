@@ -5,8 +5,33 @@ import shutil
 import textwrap
 
 from exceptions import InvalidPath
-from dropbox_utils import DropboxUtils
+from utils import DropboxUtils, Parser, set_docstring_from_parser
 from tree import PathTree
+
+
+class TreeFSParsers:
+
+    @classmethod
+    def _find_parser(cls):
+        parser = Parser(prog='find')
+        parser.add_argument(
+            '-e', '--exact',
+            action='store_true',
+            default=False,
+            help='Do an exact string match'
+        )
+        parser.add_argument(
+            '-r', '--relative',
+            action='store_true',
+            default=False,
+            help='Search relative to current path'
+        )
+        parser.add_argument(
+            'target',
+            nargs='*',
+            help='Target to search for'
+        )
+        return parser
 
 
 class TreeFS(cmd.Cmd):
@@ -15,9 +40,15 @@ class TreeFS(cmd.Cmd):
     ruler = '-'
 
     def __init__(self, tree, *args, **kwargs):
-        self.root = tree
-        self.current_node = self.root
+        self.tree = tree
+        self.current_node = self.tree
         super().__init__(*args, **kwargs)
+
+    def onecmd(self, *args):
+        try:
+            super().onecmd(*args)
+        except InvalidPath as e:
+            self.fprint(str(e))
 
     @property
     def prompt(self):
@@ -46,17 +77,27 @@ class TreeFS(cmd.Cmd):
         self.current_node.formated_print(line_type=line_type)
 
     def do_ls(self, args):
-        for line in self._ls():
+        node = self.current_node.find_path(args.strip()) if args else self.current_node
+        if node is None:
+            raise InvalidPath(args)
+        method = self._ls_meta if node.meta and node.meta.get('type') != 'folder' else self._ls
+        for line in method(node):
             self.fprint(line)
 
-    def _ls(self):
+    def _ls(self, node):
         items = []
-        for child in self.current_node.children:
+        for child in node.children:
             ind = '/' if child.meta.get('type') == 'folder' else ''
             items.append('{}{}'.format(child.value, ind))
         if items:
             items.sort()
             yield from self._column_format(items)  # flake8: noqa
+
+    def _ls_meta(self, node):
+        meta = sorted(node.meta.items(), key=lambda x: x[0])
+        width = max((len(_[0]) for _ in meta))
+        for k, v in meta:
+            yield '{:>{width}}: {}'.format(k, v, width=width)
 
     def _column_format(self, items):
         size = max(len(_) for _ in items) + 3
@@ -66,10 +107,7 @@ class TreeFS(cmd.Cmd):
             yield (entry * cols).format(*row)
 
     def do_cd(self, args):
-        try:
-            self._cd(args)
-        except InvalidPath as e:
-            self.fprint('Invalid Path: {}'.format(e))
+        self._cd(args)
 
     def _cd(self, args):
         next_node = args.strip()
@@ -84,20 +122,17 @@ class TreeFS(cmd.Cmd):
         if node.meta.get('type') == 'file':
             self.current_node = node.parent or node
 
+
+    @set_docstring_from_parser(TreeFSParsers._find_parser)
     def do_find(self, args):
-        """
-        Search tree for target
-
-        --> find target [-e] [-r]
-
-        Defaults
-            > case sensitive
-            > find all values that contain search term
-            > whole tree search
-
-        -e : Do an exact match
-        -r : Search relative to current node
-        """
+        parser = TreeFSParsers._find_parser()
+        try:
+            args = parser.parse_args(shlex.split(args, posix=True))
+        except ParserError as e:
+            print(e)
+            return
+        if not args.target:
+            return
         found = self._find(args)
         if found:
             for line in sorted(_.get_path() for _ in found):
@@ -106,30 +141,8 @@ class TreeFS(cmd.Cmd):
             self.fprint('No search results found')
 
     def _find(self, args):
-        args = shlex.split(args, posix=True)
-        flags = (('exact', '-e'), ('relative', '-r'))
-        kwargs, remainder = self._parse_flags(flags, args)
-        target = ' '.join(remainder)
-        return self.current_node.search(target, **kwargs)
-
-    def _parse_flags(self, parse_keys, data):
-        """
-        IN:
-            `parse_keys` > collection of (key, flag) pairs where `key` is name to return whether flag exists or not
-            and data to act on
-        OUT:
-            dictionary of key: bool for each flag and the remaining data
-            after the flags have been stripped
-        """
-        flags = {}
-        for f in parse_keys:
-            try:
-                i = data.index(f[1])
-                data.pop(i)
-                flags[f[0]] = True
-            except ValueError:
-                flags[f[0]] = False
-        return flags, data
+        target = ' '.join(args.target)
+        return self.current_node.search(target, exact=args.exact, relative=args.relative)
 
     def do_quit(self, args):
         return True

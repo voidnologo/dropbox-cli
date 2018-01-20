@@ -1,8 +1,9 @@
 language: python
 python:
-  - "3.4"
-  - "3.6"
-script:
-  nosetests
-install:
-  pip install -r requirements.txt
+- '3.4'
+- '3.6'
+script: nosetests
+install: pip install -r requirements.txt
+env:
+  global:
+    secure: ST4uw+WXx1ARjA09MxVwKmhf+k7E9wqI79Fz+hG5G1mQG91+DnsODUFQfC46+WgI1sCaqG/pcImQlnh8d4yazWmQJGgPkqj2rojQZiaLNltLdgmubmYnWzcaoa5Q20qB14yKCpWAFSonwTuRJp7NVnnVxW0DY3dXInS8ea4CC3eeS/Ug5kJx2oC5Y5pavYndvPwMUdJJsWC1QRTV7SW5BLQbSwpRPLB/sAbSA1zXCzxF2h9fZXBvlG+yFWRuefmQQYx9WbSBEIQzFpKNrcD8Pd9TEuAsLA7w2QvGfWtO6x7ALfiygGjRI7ptCxaMrRQtmc90x/ujvP3WU4KHv3xyyhwVVdgtztHh8awYX/Yll9RPwe8x0Zqjkg+9DFENIIxn91GoK9j1WlL69jt1deVqW6+V8jNU4Tk2yhRKY4zxfrvKdYMO2k28nHW63+nZIO+ZlvG6LRU/IAVy32vNarwwXe8MRxNCoFkEgnEgg0dpwHMA62UADlDh2v+551YLyP7dbtFPcD8rKJ+A4AZzGsnJQqNVvfx/Y//W2aMm3x0hLv+dr1TRqDi4D8RDRLrbbkvQ2jLYabmd7ngUlFw8w4ZLUzFFmXO4aOo/cn+Bnjh/xrXcjXllaz+bpJm2zIwoIvuNyPf+7OD5eWhwCLSFFKTe/rX+l58AsFdGXhDKZTERzwM=

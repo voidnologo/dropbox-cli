@@ -1,6 +1,52 @@
+import argparse
+from contextlib import redirect_stdout
+from io import StringIO
+import itertools
+import threading
+import time
+import sys
+
 import dropbox
 
+from exceptions import ParserError
 from tree import PathTree
+
+
+def wait_animation(func):
+    def wrapper(*args, **kwargs):
+        done = False
+        pulse = (
+            '[-------]', '[⌃------]', '[⌄^-----]', '[-⌄^----]',
+            '[--⌄^---]', '[---⌄^--]', '[----⌄^-]', '[-----⌄^]',
+            '[------⌄]'
+        )
+
+        def animate():
+            for c in itertools.cycle(pulse):
+                if done:
+                    break
+                sys.stdout.write('\rloading ' + c)
+                sys.stdout.flush()
+                time.sleep(0.1)
+
+        t = threading.Thread(target=animate)
+        t.start()
+        result = func(*args, **kwargs)
+        done = True
+        sys.stdout.write('\n')
+        return result
+    return wrapper
+
+
+class Parser(argparse.ArgumentParser):
+
+    def error(self, message):
+        print(message, '\n')
+        self.print_help()
+        raise ParserError(message)
+
+    def exit(self, *args, **kwargs):
+        pass
 
 
 class cached_property:
@@ -23,7 +69,8 @@ class cached_property:
 
 class DropboxUtils:
 
-    def __init__(self, token=None, client=None):
+    def __init__(self, token=None, client=None, root=None):
+        self.root = root
         self.client = client or dropbox.Dropbox(token)
 
     def do_process(self, delta_response):
@@ -31,7 +78,8 @@ class DropboxUtils:
 
     def get_changes(self, cursor):
         if cursor is None:
-            return self.client.files_list_folder('', recursive=True)
+            root = self.root if self.root else ''
+            return self.client.files_list_folder(root, recursive=True)
         return self.client.files_list_folder_continue(cursor)
 
     def get_cursor(self, delta_response):
@@ -46,6 +94,7 @@ class DropboxUtils:
             delta_response = self.get_changes(cursor)
             yield delta_response
 
+    @wait_animation
     def get_tree(self):
         tree = PathTree(root=True)
         for response in self.contents:
@@ -69,3 +118,13 @@ class DropboxUtils:
     @cached_property
     def contents(self):
         return list(self.get_all_files())
+
+
+def set_docstring_from_parser(parser):
+    def wrapper(func):
+        out = StringIO()
+        with redirect_stdout(out):
+            parser().print_help()
+        func.__doc__ = out.getvalue()
+        return func
+    return wrapper

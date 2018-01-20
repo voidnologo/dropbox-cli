@@ -218,6 +218,13 @@ class TreeTests(TestCase):
         node = root.find_path('/b')
         self.assertIsNone(node)
 
+    def test_find_node_with_missing_node_in_middle_of_path_returns_None(self):
+        root = Tree('root')
+        node = root.find_path('b/c')
+        self.assertIsNone(node)
+        node = root.find_path('/b/c')
+        self.assertIsNone(node)
+
     def test_find_nested_node_with_relative_path(self):
         root = Tree('root')
         a = Tree('a')

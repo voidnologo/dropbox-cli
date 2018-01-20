@@ -77,7 +77,7 @@ class PathTree:
     def _find_node(self, node, path):
         val = path.pop(0)
         contains = node.get_child(val)
-        if len(path) > 0:
+        if len(path) > 0 and contains:
             return contains._find_node(contains, path)
         return contains
 
